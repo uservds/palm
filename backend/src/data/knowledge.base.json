@@ -1,0 +1,242 @@
+[
+  {
+    "id": "life_clear_deep",
+    "category": "life",
+    "feature": "clear_deep",
+    "traditional_meaning": "Глубокая и чёткая линия жизни свидетельствует о сильной жизненной энергии и устойчивости.",
+    "psychological_interpretation": "Вы обладаете внутренним стержнем, который помогает вам проходить через трудности. Ваша энергия — как глубокий колодец: чем больше черпаешь, тем больше открывается.",
+    "paid_block": "success"
+  },
+  {
+    "id": "life_faint_short",
+    "category": "life",
+    "feature": "faint_short",
+    "traditional_meaning": "Тонкая и короткая линия жизни говорит о бережном отношении к ресурсам.",
+    "psychological_interpretation": "Вы умеете ценить моменты и не растрачивать себя впустую. Ваша сила — в осознанности и умении восстанавливаться.",
+    "paid_block": "fears"
+  },
+  {
+    "id": "life_broken_islands",
+    "category": "life",
+    "feature": "broken_islands",
+    "traditional_meaning": "Разрывы и островки на линии жизни указывают на периоды трансформации.",
+    "psychological_interpretation": "Ваша жизнь — это серия перерождений. Каждый разрыв — это не конец, а дверь в новую версию себя. Вы умеете начинать заново.",
+    "paid_block": "shadows"
+  },
+  {
+    "id": "life_chained_wavy",
+    "category": "life",
+    "feature": "chained_wavy",
+    "traditional_meaning": "Волнистая и цепочечная линия жизни отражает чувствительную натуру.",
+    "psychological_interpretation": "Вы — человек-камертон. Мир звучит в вас множеством нот. Ваша чувствительность — не слабость, а инструмент тонкой настройки на реальность.",
+    "paid_block": "relationships"
+  },
+  {
+    "id": "life_straight_hard",
+    "category": "life",
+    "feature": "straight_hard",
+    "traditional_meaning": "Прямая и чёткая линия жизни говорит о решительном характере.",
+    "psychological_interpretation": "Вы идёте по жизни как стрела — целенаправленно и без лишних отклонений. Ваша воля — это компас, который редко подводит.",
+    "paid_block": "career"
+  },
+  {
+    "id": "life_curved_soft",
+    "category": "life",
+    "feature": "curved_soft",
+    "traditional_meaning": "Мягкая изогнутая линия жизни отражает гибкость и адаптивность.",
+    "psychological_interpretation": "Вы — как река: огибаете препятствия, не ломаясь. Ваша гибкость — это не уступчивость, а мудрость течения.",
+    "paid_block": "future"
+  },
+  {
+    "id": "head_clear_deep",
+    "category": "head",
+    "feature": "clear_deep",
+    "traditional_meaning": "Глубокая линия головы говорит о сильном аналитическом уме.",
+    "psychological_interpretation": "Ваш разум — это скальпель: точный, острый, проникающий в суть. Вы видите то, что другие пропускают, и это ваш дар.",
+    "paid_block": "career"
+  },
+  {
+    "id": "head_faint_short",
+    "category": "head",
+    "feature": "faint_short",
+    "traditional_meaning": "Тонкая линия головы отражает интуитивный тип мышления.",
+    "psychological_interpretation": "Вы мыслите не формулами, а образами. Ваш ум работает как художник — схватывает целое, не разбирая на части.",
+    "paid_block": "shadows"
+  },
+  {
+    "id": "head_broken_islands",
+    "category": "head",
+    "feature": "broken_islands",
+    "traditional_meaning": "Островки на линии головы указывают на периоды интенсивной внутренней работы.",
+    "psychological_interpretation": "Ваш разум периодически уходит в глубокие погружения. Эти паузы — не пустота, а кузница, где рождаются ваши лучшие идеи.",
+    "paid_block": "fears"
+  },
+  {
+    "id": "head_chained_wavy",
+    "category": "head",
+    "feature": "chained_wavy",
+    "traditional_meaning": "Волнистая линия головы отражает многогранное мышление.",
+    "psychological_interpretation": "Ваш ум — как джаз: импровизационный, живой, не укладывающийся в рамки. Вы видите связи там, где другие видят хаос.",
+    "paid_block": "success"
+  },
+  {
+    "id": "head_straight_hard",
+    "category": "head",
+    "feature": "straight_hard",
+    "traditional_meaning": "Прямая и чёткая линия головы говорит о логическом складе ума.",
+    "psychological_interpretation": "Вы — архитектор собственных мыслей. Каждая идея стоит на фундаменте, каждое решение выверено. Ваш ум — это крепость.",
+    "paid_block": "career"
+  },
+  {
+    "id": "head_curved_soft",
+    "category": "head",
+    "feature": "curved_soft",
+    "traditional_meaning": "Мягкая изогнутая линия головы отражает творческое мышление.",
+    "psychological_interpretation": "Ваш разум — это сад, где идеи растут свободно. Вы не загоняете мысли в рамки — и именно поэтому они расцветают.",
+    "paid_block": "relationships"
+  },
+  {
+    "id": "heart_clear_deep",
+    "category": "heart",
+    "feature": "clear_deep",
+    "traditional_meaning": "Глубокая линия сердца говорит о сильной эмоциональной природе.",
+    "psychological_interpretation": "Вы чувствуете мир всем существом. Ваши эмоции — не хаос, а оркестр, в котором каждый инструмент важен. Вы умеете любить по-настоящему.",
+    "paid_block": "relationships"
+  },
+  {
+    "id": "heart_faint_short",
+    "category": "heart",
+    "feature": "faint_short",
+    "traditional_meaning": "Тонкая линия сердца отражает сдержанную эмоциональность.",
+    "psychological_interpretation": "Ваши чувства — как тихий ручей: незаметны снаружи, но питают глубокие подземные источники. Вы любите тихо, но верно.",
+    "paid_block": "fears"
+  },
+  {
+    "id": "heart_broken_islands",
+    "category": "heart",
+    "feature": "broken_islands",
+    "traditional_meaning": "Островки на линии сердца указывают на эмоциональные трансформации.",
+    "psychological_interpretation": "Ваше сердце проходило через зимы и вёсны. Каждый разрыв делал его мудрее. Вы знаете цену настоящим чувствам.",
+    "paid_block": "shadows"
+  },
+  {
+    "id": "heart_chained_wavy",
+    "category": "heart",
+    "feature": "chained_wavy",
+    "traditional_meaning": "Волнистая линия сердца отражает сложную эмоциональную палитру.",
+    "psychological_interpretation": "Ваше сердце — как море: в нём есть и штормы, и штили, и течения, которые никто не видит. Вы чувствуете жизнь во всей её полноте.",
+    "paid_block": "relationships"
+  },
+  {
+    "id": "heart_straight_hard",
+    "category": "heart",
+    "feature": "straight_hard",
+    "traditional_meaning": "Прямая линия сердца говорит о верности и постоянстве в чувствах.",
+    "psychological_interpretation": "Вы — маяк для тех, кто рядом. Ваши чувства надёжны, как камень. Люди знают: на вас можно опереться.",
+    "paid_block": "career"
+  },
+  {
+    "id": "heart_curved_soft",
+    "category": "heart",
+    "feature": "curved_soft",
+    "traditional_meaning": "Мягкая изогнутая линия сердца отражает открытость и эмпатию.",
+    "psychological_interpretation": "Ваше сердце — как раскрытая ладонь: готовое принять и отдать. Вы создаёте вокруг себя пространство тепла.",
+    "paid_block": "future"
+  },
+  {
+    "id": "fate_clear_deep",
+    "category": "fate",
+    "feature": "clear_deep",
+    "traditional_meaning": "Глубокая линия судьбы говорит о сильном чувстве предназначения.",
+    "psychological_interpretation": "Вы чувствуете зов — что-то внутри вас знает, зачем вы здесь. Этот внутренний компас ведёт вас даже в тумане.",
+    "paid_block": "success"
+  },
+  {
+    "id": "fate_faint_short",
+    "category": "fate",
+    "feature": "faint_short",
+    "traditional_meaning": "Тонкая линия судьбы отражает свободу от жёстких сценариев.",
+    "psychological_interpretation": "Вы не связаны чужими ожиданиями. Ваш путь — это не рельсы, а открытое поле. Вы сами выбираете направление.",
+    "paid_block": "future"
+  },
+  {
+    "id": "fate_broken_islands",
+    "category": "fate",
+    "feature": "broken_islands",
+    "traditional_meaning": "Разрывы линии судьбы указывают на резкие перемены жизненного курса.",
+    "psychological_interpretation": "Ваша жизнь — это не прямая дорога, а серпантин. Каждый поворот — это выбор, который вы сделали осознанно.",
+    "paid_block": "shadows"
+  },
+  {
+    "id": "fate_chained_wavy",
+    "category": "fate",
+    "feature": "chained_wavy",
+    "traditional_meaning": "Волнистая линия судьбы отражает поиск себя через разные роли.",
+    "psychological_interpretation": "Вы — человек-поиск. Каждая роль, которую вы примеряете, — это глава в книге о том, кто вы на самом деле.",
+    "paid_block": "career"
+  },
+  {
+    "id": "fate_straight_hard",
+    "category": "fate",
+    "feature": "straight_hard",
+    "traditional_meaning": "Прямая линия судьбы говорит о ясном жизненном направлении.",
+    "psychological_interpretation": "Вы знаете, куда идёте. Ваш путь — это не блуждание, а маршрут. И даже если он длинный — вы не сбиваетесь.",
+    "paid_block": "success"
+  },
+  {
+    "id": "fate_curved_soft",
+    "category": "fate",
+    "feature": "curved_soft",
+    "traditional_meaning": "Мягкая изогнутая линия судьбы отражает гибкий подход к жизненным целям.",
+    "psychological_interpretation": "Ваш путь — это танец, а не марш. Вы достигаете целей не через давление, а через текучесть и адаптацию.",
+    "paid_block": "relationships"
+  },
+  {
+    "id": "mount_clear_deep",
+    "category": "mount",
+    "feature": "clear_deep",
+    "traditional_meaning": "Выраженные холмы на ладони говорят о сильных внутренних ресурсах.",
+    "psychological_interpretation": "Внутри вас — целый ландшафт сил. Каждый холм — это талант, который ждёт своего часа. Вы богаты тем, что не видно снаружи.",
+    "paid_block": "success"
+  },
+  {
+    "id": "mount_faint_short",
+    "category": "mount",
+    "feature": "faint_short",
+    "traditional_meaning": "Плоские холмы отражают скромное отношение к собственным достижениям.",
+    "psychological_interpretation": "Вы не хвастаетесь своими дарами — но они есть. Ваша сила в том, что вы не нуждаетесь в подтверждении извне.",
+    "paid_block": "fears"
+  },
+  {
+    "id": "mount_broken_islands",
+    "category": "mount",
+    "feature": "broken_islands",
+    "traditional_meaning": "Неровности холмов указывают на неравномерное распределение энергии.",
+    "psychological_interpretation": "Ваша энергия — как приливы: то мощная, то тихая. Это не недостаток, а ритм, который нужно научиться слышать.",
+    "paid_block": "shadows"
+  },
+  {
+    "id": "mount_chained_wavy",
+    "category": "mount",
+    "feature": "chained_wavy",
+    "traditional_meaning": "Мягкие переливы холмов отражают многогранность натуры.",
+    "psychological_interpretation": "Вы — не одна нота, а аккорд. В вас звучит сразу несколько голосов, и каждый из них настоящий.",
+    "paid_block": "relationships"
+  },
+  {
+    "id": "mount_straight_hard",
+    "category": "mount",
+    "feature": "straight_hard",
+    "traditional_meaning": "Чёткие контуры холмов говорят о структурном подходе к жизни.",
+    "psychological_interpretation": "Вы строите свою жизнь как здание — с фундаментом, стенами и крышей. Каждое решение имеет опору.",
+    "paid_block": "career"
+  },
+  {
+    "id": "mount_curved_soft",
+    "category": "mount",
+    "feature": "curved_soft",
+    "traditional_meaning": "Округлые холмы отражают гармоничное развитие всех сторон личности.",
+    "psychological_interpretation": "Вы — как сад, где всё растёт в своём ритме. Не торопите себя. Ваша гармония — это не статика, а живое равновесие.",
+    "paid_block": "future"
+  }
+]

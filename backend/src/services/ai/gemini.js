@@ -1,0 +1,90 @@
+import { config } from '../../config/env.js';
+import { extractJsonFromText } from '../../utils/json.js';
+
+export class GeminiProvider {
+  name = 'gemini';
+
+  async analyze(params) {
+    const { imageBase64, mimeType, prompt } = params;
+    const apiKey = config.AI_API_KEY;
+    const model = config.AI_MODEL || 'gemini-1.5-flash';
+
+    if (!apiKey) {
+      throw new Error('Gemini API key is not configured');
+    }
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+
+    const body = {
+      systemInstruction: {
+        parts: [{ text: prompt }],
+      },
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            {
+              inline_data: {
+                mime_type: mimeType,
+                data: imageBase64,
+              },
+            },
+            {
+              text: 'РџСЂРѕР°РЅР°Р»РёР·РёСЂСѓР№ РёР·РѕР±СЂР°Р¶РµРЅРёРµ Р»Р°РґРѕРЅРё Рё РІРµСЂРЅРё СЃС‚СЂРѕРіРѕ JSON РїРѕ СѓРєР°Р·Р°РЅРЅРѕР№ СЃС…РµРјРµ. Р‘РµР· markdown, Р±РµР· РєРѕРјРјРµРЅС‚Р°СЂРёРµРІ.',
+            },
+          ],
+        },
+      ],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        temperature: 0.3,
+        maxOutputTokens: 4096,
+      },
+    };
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), config.AI_TIMEOUT_MS);
+
+    try {
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timer);
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error(`Gemini API ${resp.status}: ${errText.slice(0, 200)}`);
+      }
+
+      const json = await resp.json();
+      const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (!text) {
+        throw new Error('Gemini returned empty response');
+      }
+
+      const parsed = extractJsonFromText(text);
+
+      if (!parsed) {
+        throw new Error('Failed to parse Gemini response as JSON');
+      }
+
+      return parsed;
+    } catch (err) {
+      clearTimeout(timer);
+
+      if (err?.name === 'AbortError') {
+        throw new Error(`Gemini timed out after ${config.AI_TIMEOUT_MS}ms`);
+      }
+
+      throw err;
+    }
+  }
+}

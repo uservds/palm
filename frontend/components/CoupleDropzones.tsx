@@ -1,7 +1,4 @@
-cd F:\Projects\Palmis_AI\palm\frontend
-
-@'
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
@@ -117,9 +114,3 @@ export default function CoupleDropzones({ onBothReady }: CoupleDropzonesProps) {
     </div>
   );
 }
-'@ | Out-File -FilePath "components\CoupleDropzones.tsx" -Encoding utf8
-
-cd ..
-git add frontend/components/CoupleDropzones.tsx
-git commit -m "feat: CoupleDropzones component for совместимость-пар page"
-git push

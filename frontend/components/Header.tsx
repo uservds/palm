@@ -1,10 +1,14 @@
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 
-const navItems = [
-  { href: "/возможности/совместимость-пар", label: "Совместимость пар" },
+const capabilityItems = [
+  { href: "/compat/couple", label: "Совместимость пар" },
   { href: "/возможности/дата-свадьбы", label: "Дата свадьбы" },
   { href: "/возможности/совместимость-дружбы", label: "Дружба" },
   { href: "/возможности/деловые-партнёры", label: "Партнёры" },
+];
+
+const navItems = [
   { href: "/тарифы", label: "Тарифы" },
   { href: "/как-это-работает", label: "Как это работает" },
 ];
@@ -18,6 +22,26 @@ export default function Header() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-6">
+          <div className="group relative">
+            <button className="flex items-center gap-1 text-sm text-content-muted hover:text-content-main transition-colors">
+              Возможности
+              <ChevronDown className="h-3.5 w-3.5" />
+            </button>
+            <div className="invisible absolute left-0 top-full pt-2 opacity-0 transition-all group-hover:visible group-hover:opacity-100">
+              <div className="flex min-w-[220px] flex-col gap-1 rounded-xl border border-content-border bg-surface p-2 shadow-lg">
+                {capabilityItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="rounded-lg px-3 py-2 text-sm text-content-muted transition-colors hover:bg-neutral-badge hover:text-content-main"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+
           {navItems.map((item) => (
             <Link
               key={item.href}

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
@@ -35,9 +35,13 @@ export default function CoupleDropzones({ onBothReady }: CoupleDropzonesProps) {
     }
   };
 
+  const genderIconColor = (gender: Gender) =>
+    gender === 'male' ? 'text-primary' : 'text-brick-500';
+
   const renderSlot = (
     slot: SlotState,
     label: string,
+    gender: Gender,
     onPick: (file: File) => void
   ) => (
     <Card
@@ -71,7 +75,7 @@ export default function CoupleDropzones({ onBothReady }: CoupleDropzonesProps) {
       ) : (
         <>
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-neutral-badge">
-            <Upload className="h-6 w-6 text-content-muted" />
+            <User className={cn('h-6 w-6', genderIconColor(gender))} />
           </div>
           <p className="text-sm font-medium text-content-main">{label}</p>
           <p className="text-xs text-content-muted">Нажмите или перетащите фото</p>
@@ -85,15 +89,17 @@ export default function CoupleDropzones({ onBothReady }: CoupleDropzonesProps) {
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2 text-sm font-medium text-content-main">
-            <User className="h-4 w-4" /> Участник 1
+            <User className={cn('h-4 w-4', genderIconColor('male'))} />
+            Участник 1 · Мужчина
           </div>
-          {renderSlot(slotA, 'Ладонь участника 1', (f) => handleFile('A', f))}
+          {renderSlot(slotA, 'Ладонь участника 1', 'male', (f) => handleFile('A', f))}
         </div>
 
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm font-medium text-content-main">
-              <User className="h-4 w-4" /> Участник 2
+              <User className={cn('h-4 w-4', genderIconColor(genderB))} />
+              Участник 2 · {genderB === 'male' ? 'Мужчина' : 'Женщина'}
             </div>
             <div className="flex items-center gap-2">
               <Label htmlFor="genderB" className="text-xs text-content-muted">
@@ -108,7 +114,7 @@ export default function CoupleDropzones({ onBothReady }: CoupleDropzonesProps) {
               />
             </div>
           </div>
-          {renderSlot(slotB, 'Ладонь участника 2', (f) => handleFile('B', f))}
+          {renderSlot(slotB, 'Ладонь участника 2', genderB, (f) => handleFile('B', f))}
         </div>
       </div>
     </div>

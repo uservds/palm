@@ -80,7 +80,7 @@ export default function App() {
         setState('error');
       }
     } catch (err) {
-      setError('Не удалось связаться с сервером. Проверь, запущен ли backend на http://127.0.0.1:3001');
+      setError('Не удалось связаться с сервером. Проверь, запущен ли backend.');
       setState('error');
     }
   };

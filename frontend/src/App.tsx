@@ -65,7 +65,7 @@ export default function App() {
       const formData = new FormData();
       formData.append('image', file);
 
-      const response = await fetch('http://127.0.0.1:3001/api/vision', {
+      const response = await fetch('/api/vision', {
         method: 'POST',
         body: formData,
       });

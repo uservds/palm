@@ -61,7 +61,7 @@ export default function Header() {
             Войти
           </Link>
           <Link
-            href="/pricing"
+            href="/"
             className="bg-primary hover:bg-primary-hover text-white text-sm px-4 py-2 rounded-lg transition-colors"
           >
             Начать разбор

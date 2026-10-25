@@ -16,10 +16,10 @@ export default function Footer() {
 
         <div className="flex flex-col gap-2 text-sm">
           <span className="text-content-main font-medium mb-1">Продукт</span>
-          <Link href="/тарифы" className="text-content-muted hover:text-content-main transition-colors">
+          <Link href="/pricing" className="text-content-muted hover:text-content-main transition-colors">
             Тарифы
           </Link>
-          <Link href="/как-это-работает" className="text-content-muted hover:text-content-main transition-colors">
+          <Link href="/how-it-works" className="text-content-muted hover:text-content-main transition-colors">
             Как это работает
           </Link>
         </div>

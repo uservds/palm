@@ -3,14 +3,14 @@ import { ChevronDown } from "lucide-react";
 
 const capabilityItems = [
   { href: "/compat/couple", label: "Совместимость пар" },
-  { href: "/возможности/дата-свадьбы", label: "Дата свадьбы" },
-  { href: "/возможности/совместимость-дружбы", label: "Дружба" },
-  { href: "/возможности/деловые-партнёры", label: "Партнёры" },
+  { href: "/wedding-date", label: "Дата свадьбы" },
+  { href: "/compat/friendship", label: "Дружба" },
+  { href: "/compat/business", label: "Деловые партнёры" }, // было /возможности/деловые-партнёры
 ];
 
 const navItems = [
-  { href: "/тарифы", label: "Тарифы" },
-  { href: "/как-это-работает", label: "Как это работает" },
+  { href: "/pricing", label: "Тарифы" },
+  { href: "/how-it-works", label: "Как это работает" },
 ];
 
 export default function Header() {
@@ -61,7 +61,7 @@ export default function Header() {
             Войти
           </Link>
           <Link
-            href="/тарифы"
+            href="/pricing"
             className="bg-primary hover:bg-primary-hover text-white text-sm px-4 py-2 rounded-lg transition-colors"
           >
             Начать разбор

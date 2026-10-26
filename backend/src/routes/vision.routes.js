@@ -22,7 +22,7 @@ visionRouter.post('/api/vision', upload.single('image'), async (req, res) => {
         ok: false,
         error: {
           code: 'INVALID_FILE',
-          user_message: `Р—Р°РіСЂСѓР·РёС‚Рµ С„РѕС‚Рѕ Р»Р°РґРѕРЅРё РІ С„РѕСЂРјР°С‚Рµ JPG, PNG РёР»Рё WebP СЂР°Р·РјРµСЂРѕРј РґРѕ ${config.MAX_IMAGE_MB} MB.`,
+          user_message: `Загрузите фото ладони в формате JPG, PNG или WebP размером до ${config.MAX_IMAGE_MB} MB.`,
         },
       });
     }
@@ -32,7 +32,7 @@ visionRouter.post('/api/vision', upload.single('image'), async (req, res) => {
         ok: false,
         error: {
           code: 'INVALID_FILE',
-          user_message: 'РќРµРґРѕРїСѓСЃС‚РёРјС‹Р№ С„РѕСЂРјР°С‚. Р Р°Р·СЂРµС€РµРЅС‹: ' + config.ALLOWED_MIME_TYPES.join(', '),
+          user_message: 'Недопустимый формат. Разрешены: ' + config.ALLOWED_MIME_TYPES.join(', '),
         },
       });
     }
@@ -48,7 +48,7 @@ visionRouter.post('/api/vision', upload.single('image'), async (req, res) => {
       ok: false,
       error: {
         code: 'INTERNAL_ERROR',
-        user_message: 'Р’РЅСѓС‚СЂРµРЅРЅСЏСЏ РѕС€РёР±РєР° СЃРµСЂРІРµСЂР°.',
+        user_message: 'Внутренняя ошибка сервера.',
       },
     });
   }

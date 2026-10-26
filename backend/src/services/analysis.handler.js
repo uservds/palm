@@ -14,7 +14,7 @@ import {
 const BAD_IMAGE_THRESHOLD = 45;
 
 /**
- * Shared analysis logic for /api/scan and /api/vision.
+ * Shared analysis logic for /api/vision.
  * Image buffer is kept only in memory and never written to disk.
  *
  * @param {Buffer} buffer
@@ -52,9 +52,6 @@ export async function analyzePalm(buffer, mimeType) {
     const message = err instanceof Error ? err.message : 'Unknown AI error';
     logVisionError(requestId, 'AI_CALL_FAILED', message);
 
-    // ----------------------------------------------------------
-    // 2. Try fallback provider
-    // ----------------------------------------------------------
     try {
       activeProvider = fallbackProvider;
       isFallback = true;
@@ -73,7 +70,7 @@ export async function analyzePalm(buffer, mimeType) {
         ok: false,
         error: {
           code: 'AI_UNAVAILABLE',
-          user_message: 'РЎРµСЂРІРёСЃ Р°РЅР°Р»РёР·Р° РІСЂРµРјРµРЅРЅРѕ РЅРµРґРѕСЃС‚СѓРїРµРЅ. РџРѕРїСЂРѕР±СѓР№С‚Рµ РїРѕР·Р¶Рµ.',
+          user_message: 'Сервис анализа временно недоступен. Попробуйте позже.',
         },
       };
     }
@@ -91,13 +88,10 @@ export async function analyzePalm(buffer, mimeType) {
       JSON.stringify(validated.error.issues).slice(0, 300)
     );
 
-    // ----------------------------------------------------------
-    // 4. Retry once with stricter JSON instruction
-    // ----------------------------------------------------------
     try {
       const strictPrompt =
         prompt +
-        '\n\nР’РђР–РќРћ: Р’РµСЂРЅРё РўРћР›Р¬РљРћ РІР°Р»РёРґРЅС‹Р№ JSON. Р‘РµР· markdown, Р±РµР· РєРѕРјРјРµРЅС‚Р°СЂРёРµРІ, Р±РµР· С‚РµРєСЃС‚Р° РґРѕ/РїРѕСЃР»Рµ.';
+        '\n\nВАЖНО: Верни ТОЛЬКО валидный JSON. Без markdown, без комментариев, без текста до/после.';
 
       result = await activeProvider.analyze({
         imageBase64,
@@ -112,9 +106,6 @@ export async function analyzePalm(buffer, mimeType) {
         throw new Error('Retry also failed validation');
       }
     } catch {
-      // --------------------------------------------------------
-      // 5. If retry fails, fallback to mock
-      // --------------------------------------------------------
       try {
         activeProvider = new MockProvider();
         isFallback = true;
@@ -139,7 +130,7 @@ export async function analyzePalm(buffer, mimeType) {
           ok: false,
           error: {
             code: 'AI_INVALID_RESPONSE',
-            user_message: 'РќРµ СѓРґР°Р»РѕСЃСЊ РїРѕР»СѓС‡РёС‚СЊ РєРѕСЂСЂРµРєС‚РЅС‹Р№ РѕС‚РІРµС‚ AI. РџРѕРїСЂРѕР±СѓР№С‚Рµ РїРѕР·Р¶Рµ.',
+            user_message: 'Не удалось получить корректный ответ AI. Попробуйте позже.',
           },
         };
       }
@@ -169,7 +160,7 @@ export async function analyzePalm(buffer, mimeType) {
         code: 'BAD_IMAGE_QUALITY',
         user_message:
           quality?.user_hint ||
-          'РќРµ РїРѕР»СѓС‡РёР»РѕСЃСЊ СЂР°Р·РѕР±СЂР°С‚СЊ Р»Р°РґРѕРЅСЊ. РЎРґРµР»Р°Р№С‚Рµ С„РѕС‚Рѕ Р±Р»РёР¶Рµ, РїСЂРё С…РѕСЂРѕС€РµРј СЃРІРµС‚Рµ Рё Р±РµР· СЃРёР»СЊРЅС‹С… С‚РµРЅРµР№.',
+          'Не получилось разобрать ладонь. Сделайте фото ближе, при хорошем свете и без сильных теней.',
         details: {
           image_quality: quality || {
             score: 0,
@@ -203,7 +194,7 @@ export async function analyzePalm(buffer, mimeType) {
         code: 'BAD_IMAGE_QUALITY',
         user_message:
           quality.user_hint ||
-          'РќРµ РїРѕР»СѓС‡РёР»РѕСЃСЊ СЂР°Р·РѕР±СЂР°С‚СЊ Р»Р°РґРѕРЅСЊ. РЎРґРµР»Р°Р№С‚Рµ С„РѕС‚Рѕ Р±Р»РёР¶Рµ, РїСЂРё С…РѕСЂРѕС€РµРј СЃРІРµС‚Рµ Рё Р±РµР· СЃРёР»СЊРЅС‹С… С‚РµРЅРµР№.',
+          'Не получилось разобрать ладонь. Сделайте фото ближе, при хорошем свете и без сильных теней.',
         details: {
           image_quality: quality,
         },
@@ -243,7 +234,7 @@ export async function analyzePalm(buffer, mimeType) {
         ok: false,
         error: {
           code: 'AI_INVALID_RESPONSE',
-          user_message: 'РќРµ СѓРґР°Р»РѕСЃСЊ СЃС„РѕСЂРјРёСЂРѕРІР°С‚СЊ Р±РµР·РѕРїР°СЃРЅС‹Р№ РѕС‚С‡С‘С‚. РџРѕРїСЂРѕР±СѓР№С‚Рµ РїРѕР·Р¶Рµ.',
+          user_message: 'Не удалось сформировать безопасный отчёт. Попробуйте позже.',
         },
       };
     }
@@ -279,11 +270,9 @@ export async function analyzePalm(buffer, mimeType) {
     archetype: result.report.archetype,
     metaphor: result.report.metaphor,
 
-    // backward compatibility
     insights: result.report.free_insights,
     locked_block_titles: result.report.locked_blocks.map((block) => block.title),
 
-    // new architecture
     free_insights: result.report.free_insights,
     locked_blocks: result.report.locked_blocks,
     scientific_facts: result.report.scientific_facts,

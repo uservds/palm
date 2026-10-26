@@ -1,22 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Eye, EyeOff, Lock } from "lucide-react";
-import type { Archetype } from "@/lib/archetypes";
+import { Sparkles, Eye, Lock } from "lucide-react";
+import type { VisionSuccessResponse } from "@/lib/api";
 
 type FreeReportProps = {
   userName?: string;
-  archetype: Archetype;
+  report: VisionSuccessResponse;
 };
 
-const FULL_SECTIONS = [
-  "Эмоциональные циклы",
-  "Паттерны в партнёрстве",
-  "Финансовые «слепые зоны»",
-  "Персональные ритуалы на 7 дней",
-];
+const FINDING_LABELS = ["Ваш ресурс в кризисе", "Тень"];
 
-export default function FreeReport({ userName, archetype }: FreeReportProps) {
+export default function FreeReport({ userName, report }: FreeReportProps) {
   const [email, setEmail] = useState("");
   const [unlocked, setUnlocked] = useState(false);
 
@@ -24,6 +19,11 @@ export default function FreeReport({ userName, archetype }: FreeReportProps) {
     e.preventDefault();
     if (email.trim()) setUnlocked(true);
   }
+
+  // First two free_insights are the labeled "resource / shadow" pair from
+  // the ТЗ preamble spec; anything after that is shown as a plain extra line.
+  const labeledFindings = report.free_insights?.slice(0, 2) ?? [];
+  const extraFindings = report.free_insights?.slice(2) ?? [];
 
   return (
     <div className="max-w-xl mx-auto px-6 pb-20">
@@ -35,52 +35,74 @@ export default function FreeReport({ userName, archetype }: FreeReportProps) {
           </p>
           <h2 className="text-xl font-bold text-content-main">
             {userName ? `${userName}, ваша` : "Ваша"} ладонь показывает архетип
-            «{archetype.name}»
+            «{report.archetype}»
           </h2>
-          <p className="text-sm text-content-muted mt-1">
-            Основные энергии: {archetype.energies[0]} + {archetype.energies[1]}
-          </p>
+          {report.metaphor && (
+            <p className="text-sm text-content-muted mt-1">{report.metaphor}</p>
+          )}
         </div>
 
         {/* Ключевые находки */}
-        <div className="space-y-3">
-          <p className="text-sm font-semibold text-content-main flex items-center gap-2">
-            🔮 Ключевые находки:
-          </p>
-          <div className="flex items-start gap-2 text-sm text-content-main">
-            <span className="text-primary mt-0.5">✓</span>
-            <span>Ваш ресурс в кризисе: {archetype.finding}</span>
+        {labeledFindings.length > 0 && (
+          <div className="space-y-3">
+            <p className="text-sm font-semibold text-content-main flex items-center gap-2">
+              🔮 Ключевые находки:
+            </p>
+            {labeledFindings.map((item, i) => {
+              const [, ...rest] = item.split(":");
+              const text = rest.length > 0 ? rest.join(":").trim() : item;
+              return (
+                <div
+                  key={i}
+                  className="flex items-start gap-2 text-sm text-content-main"
+                >
+                  <span
+                    className={i === 0 ? "text-primary mt-0.5" : "text-brick-500 mt-0.5"}
+                  >
+                    {i === 0 ? "✓" : "✧"}
+                  </span>
+                  <span>
+                    <span className="font-medium">{FINDING_LABELS[i]}:</span> {text}
+                  </span>
+                </div>
+              );
+            })}
+            {extraFindings.map((item, i) => (
+              <p key={i} className="text-sm text-content-muted pl-6">
+                {item}
+              </p>
+            ))}
           </div>
-          <div className="flex items-start gap-2 text-sm text-content-main">
-            <span className="text-brick-500 mt-0.5">✧</span>
-            <span>Тень: {archetype.shadow}</span>
-          </div>
-        </div>
+        )}
 
         {/* Тизер полной картины */}
-        <div className="bg-neutral-badge rounded-xl p-4 space-y-2">
-          <p className="text-sm font-semibold text-content-main">
-            🌌 Полная картина включает:
-          </p>
-          <ul className="space-y-1.5">
-            {FULL_SECTIONS.map((section) => (
-              <li
-                key={section}
-                className="text-sm text-content-muted flex items-center gap-2"
-              >
-                <Lock className="w-3.5 h-3.5 text-content-muted shrink-0" />
-                {section}
-              </li>
-            ))}
-          </ul>
-        </div>
+        {report.locked_blocks?.length > 0 && (
+          <div className="bg-neutral-badge rounded-xl p-4 space-y-3">
+            <p className="text-sm font-semibold text-content-main">
+              🌌 Полная картина включает:
+            </p>
+            <ul className="space-y-2.5">
+              {report.locked_blocks.map((block) => (
+                <li key={block.title} className="flex items-start gap-2">
+                  <Lock className="w-3.5 h-3.5 text-content-muted shrink-0 mt-0.5" />
+                  <span className="text-sm">
+                    <span className="font-medium text-content-main">{block.title}.</span>{" "}
+                    <span className="text-content-muted">
+                      {typeof block.teaser === "string" ? block.teaser : ""}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Email-гейт / разблокировка */}
         {!unlocked ? (
           <form onSubmit={handleUnlock} className="space-y-3 pt-2">
             <p className="text-sm text-content-main font-medium flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-accent" />
-              Ваша ладонь готова раскрыть 14 секретов
+              {report.cta || "Ваша ладонь готова раскрыть 14 секретов"}
             </p>
             <div className="flex flex-col sm:flex-row gap-2">
               <input
@@ -109,6 +131,12 @@ export default function FreeReport({ userName, archetype }: FreeReportProps) {
               Полный разбор (14 разделов) — 399 ₽
             </p>
           </div>
+        )}
+
+        {report.disclaimer && (
+          <p className="text-xs text-content-muted pt-2 border-t border-content-border">
+            {report.disclaimer}
+          </p>
         )}
       </div>
     </div>

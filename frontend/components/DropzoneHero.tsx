@@ -2,22 +2,38 @@
 
 import { useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
-import { Upload, Check } from 'lucide-react';
+import { Upload, Check, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface DropzoneHeroProps {
-  onFileSelected: (url: string) => void;
+  onFileSelected: (file: File, previewUrl: string) => void;
 }
+
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_SIZE_MB = 5;
 
 export default function DropzoneHero({ onFileSelected }: DropzoneHeroProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = (file: File) => {
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setError('Загрузите фото в формате JPG, PNG или WebP.');
+      setPreview(null);
+      return;
+    }
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      setError(`Файл слишком большой. Максимум ${MAX_SIZE_MB} MB.`);
+      setPreview(null);
+      return;
+    }
+
+    setError(null);
     const url = URL.createObjectURL(file);
     setPreview(url);
-    onFileSelected(url);
+    onFileSelected(file, url);
   };
 
   return (
@@ -27,9 +43,11 @@ export default function DropzoneHero({ onFileSelected }: DropzoneHeroProps) {
           'relative flex h-72 flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed transition-colors',
           isDragging
             ? 'border-primary bg-accent-soft'
-            : preview
-              ? 'border-primary bg-accent-soft'
-              : 'border-content-border bg-surface hover:border-primary/50'
+            : error
+              ? 'border-brick-400 bg-brick-50'
+              : preview
+                ? 'border-primary bg-accent-soft'
+                : 'border-content-border bg-surface hover:border-primary/50'
         )}
         onDragOver={(e) => {
           e.preventDefault();
@@ -54,7 +72,19 @@ export default function DropzoneHero({ onFileSelected }: DropzoneHeroProps) {
             if (file) handleFile(file);
           }}
         />
-        {preview ? (
+        {error ? (
+          <>
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brick-100">
+              <AlertCircle className="h-7 w-7 text-brick-500" />
+            </div>
+            <p className="text-base font-medium text-content-main text-center px-4">
+              {error}
+            </p>
+            <p className="text-sm text-content-muted">
+              Нажмите или перетащите другое фото
+            </p>
+          </>
+        ) : preview ? (
           <>
             <img
               src={preview}

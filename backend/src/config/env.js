@@ -14,7 +14,8 @@ function num(v, fallback) {
 
 export const config = {
   PORT:              num(process.env.PORT, 3001),
-  FRONTEND_URL:      process.env.FRONTEND_URL || 'http://localhost:5173',
+  // Next.js dev server default port (was 5173 — the old Vite frontend's port)
+  FRONTEND_URL:      process.env.FRONTEND_URL || 'http://localhost:3000',
 
   MOCK_VISION:       process.env.MOCK_VISION === 'true',
 

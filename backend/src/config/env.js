@@ -14,7 +14,6 @@ function num(v, fallback) {
 
 export const config = {
   PORT:              num(process.env.PORT, 3001),
-  // Next.js dev server default port (was 5173 — the old Vite frontend's port)
   FRONTEND_URL:      process.env.FRONTEND_URL || 'http://localhost:3000',
 
   MOCK_VISION:       process.env.MOCK_VISION === 'true',
@@ -28,4 +27,10 @@ export const config = {
   MAX_IMAGE_MB:      num(process.env.MAX_IMAGE_MB, 5),
   ALLOWED_MIME_TYPES:(process.env.ALLOWED_MIME_TYPES || 'image/jpeg,image/png,image/webp')
                         .split(',').map(s => s.trim()).filter(Boolean),
+
+  JWT_ACCESS_SECRET:      process.env.JWT_ACCESS_SECRET || 'dev-insecure-access-secret',
+  JWT_REFRESH_SECRET:     process.env.JWT_REFRESH_SECRET || 'dev-insecure-refresh-secret',
+  JWT_ACCESS_EXPIRES_IN:  process.env.JWT_ACCESS_EXPIRES_IN || '15m',
+  JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
+  BCRYPT_SALT_ROUNDS:     num(process.env.BCRYPT_SALT_ROUNDS, 10),
 };

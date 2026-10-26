@@ -3,6 +3,7 @@ import cors from 'cors';
 import multer from 'multer';
 import { config } from './config/env.js';
 import { visionRouter } from './routes/vision.routes.js';
+import { authRouter } from './routes/auth.routes.js';
 
 export function buildApp() {
   const app = express();
@@ -18,6 +19,7 @@ export function buildApp() {
   app.get('/health', (_req, res) => res.json({ ok: true }));
 
   app.use(visionRouter);
+  app.use(authRouter);
 
   app.use((err, _req, res, _next) => {
     const isMulterError =

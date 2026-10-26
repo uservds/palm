@@ -1,0 +1,85 @@
+PalmAI — блок Auth (email + пароль)
+=====================================
+
+ЧТО В АРХИВЕ (9 файлов)
+------------------------
+backend/src/app.js                         — кодировка исправлена + подключён authRouter
+backend/src/config/env.js                  — добавлены JWT_* поля
+backend/src/lib/prisma.js                  — НОВЫЙ, Prisma Client singleton
+backend/src/utils/jwt.js                   — НОВЫЙ, подпись/проверка токенов
+backend/src/middleware/auth.middleware.js  — НОВЫЙ, requireAuth
+backend/src/services/auth.service.js       — НОВЫЙ, register/login/refresh/logout
+backend/src/routes/auth.routes.js          — НОВЫЙ, /api/auth/*
+frontend/lib/auth.ts                       — НОВЫЙ, токены + вызовы backend
+frontend/components/LoginForm.tsx          — та же вёрстка, реальные вызовы вместо заглушки
+
+ПЕРЕД УСТАНОВКОЙ: у вас уже должно быть сделано (судя по переписке — да)
+--------------------------------------------------------------------------
+1. npm install bcryptjs jsonwebtoken   (в backend)
+2. В prisma/schema.prisma добавлены модели User и RefreshToken
+3. npx prisma migrate dev --name add_users_auth  — выполнено успешно
+4. npx prisma generate — выполнено успешно
+5. В backend/.env настоящий DATABASE_URL (сейчас — локальный Postgres)
+
+КАК УСТАНОВИТЬ АРХИВ
+----------------------
+Распакуйте поверх корня проекта (backend/... и frontend/...), разрешите
+перезапись. Новых файлов 5 (lib/prisma.js, utils/jwt.js,
+middleware/auth.middleware.js, services/auth.service.js, routes/auth.routes.js)
+— для них просто появятся новые файлы/папки.
+
+ВАЖНО — ПРОВЕРЬТЕ .env ПОСЛЕ УСТАНОВКИ
+-----------------------------------------
+JWT_ACCESS_SECRET и JWT_REFRESH_SECRET должны быть настоящими случайными
+строками, не текстом-заглушкой. Если ещё не сгенерировали:
+
+  node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+
+Выполните дважды, вставьте в .env:
+  JWT_ACCESS_SECRET=<результат 1>
+  JWT_REFRESH_SECRET=<результат 2>
+
+ПРОВЕРКА ПОСЛЕ УСТАНОВКИ (ОБЯЗАТЕЛЬНО, ПО ПОРЯДКУ)
+------------------------------------------------------
+1. Перезапустить backend (npm start в папке backend). В консоли не должно
+   быть ошибок про "Cannot find module" (если появится — значит какой-то
+   файл архива не распаковался, смотрите ниже "Если файл не создался").
+
+2. Health-check:
+   curl http://localhost:3001/health
+   ожидается: {"ok":true}
+
+3. На сайте: /login → вкладка "Регистрация" → новый email/пароль/имя →
+   кнопка "Создать аккаунт". Ожидается переход на /profile.
+   В DevTools → Application → Local Storage должны появиться
+   palmai_access_token и palmai_refresh_token.
+
+4. /login → вкладка "Вход" → тот же email/пароль → должно войти.
+
+5. Попробовать зарегистрировать тот же email второй раз — должна быть
+   ошибка "Пользователь с таким email уже зарегистрирован."
+
+6. Попробовать войти с неверным паролем — "Неверный email или пароль."
+
+ЕСЛИ ФАЙЛ НЕ СОЗДАЛСЯ / НЕ ПЕРЕЗАПИСАЛСЯ
+--------------------------------------------
+Проверьте одной командой (PowerShell, из корня проекта):
+
+  Get-ChildItem backend\src\lib, backend\src\middleware -Recurse
+  Get-Content backend\src\routes\auth.routes.js -TotalCount 3
+  Get-Content backend\src\services\auth.service.js -TotalCount 3
+
+Если какого-то файла нет или первые строки не совпадают с тем, что должно
+быть (import { Router } from 'express'; / import bcrypt from 'bcryptjs';) —
+откройте файл руками в редакторе, скопируйте нужный блок из чата заново
+и сохраните как обычный текстовый файл в кодировке UTF-8 (без BOM).
+
+ЧТО ПОКА НЕ ТРОГАЛИ (ожидаемо)
+---------------------------------
+- Google OAuth — кнопка остаётся заглушкой, подключим отдельно, когда
+  будут готовы Client ID/Secret.
+- /profile — по-прежнему показывает мок-данные (lib/mockProfile.ts), а не
+  реального залогиненного пользователя. Это отдельная задача на будущее,
+  не входит в блок Auth.
+- Никакой защиты страниц (middleware на фронте) не добавлено — /profile
+  и другие страницы пока открыты всем, залогинен человек или нет.

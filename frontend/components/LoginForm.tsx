@@ -7,6 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import GoogleAuthButton from "@/components/GoogleAuthButton";
+import { registerUser, loginUser } from "@/lib/auth";
+import { ApiError } from "@/lib/api";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -36,12 +38,22 @@ export default function LoginForm() {
     }
 
     setLoading(true);
-    // TODO (Приоритет 4): POST /api/auth/login или /api/auth/register
-    await new Promise((r) => setTimeout(r, 600));
-    setLoading(false);
-
-    // заглушка: пока без реальной сессии просто ведём в профиль
-    router.push("/profile");
+    try {
+      if (mode === "register") {
+        await registerUser({ email, password, name });
+      } else {
+        await loginUser({ email, password });
+      }
+      router.push("/profile");
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "Не удалось выполнить запрос. Попробуйте позже."
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

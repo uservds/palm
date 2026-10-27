@@ -14,6 +14,7 @@ function num(v, fallback) {
 
 export const config = {
   PORT:              num(process.env.PORT, 3001),
+  DATABASE_URL: process.env.DATABASE_URL || '',
   FRONTEND_URL:      process.env.FRONTEND_URL || 'http://localhost:3000',
 
   MOCK_VISION:       process.env.MOCK_VISION === 'true',

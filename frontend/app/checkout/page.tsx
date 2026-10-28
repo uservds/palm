@@ -1,12 +1,13 @@
 import CheckoutForm from "@/components/CheckoutForm";
 import { getPlan } from "@/lib/checkoutPlans";
 
-export default function CheckoutPage({
+export default async function CheckoutPage({
   searchParams,
 }: {
-  searchParams: { plan?: string };
+  searchParams: Promise<{ plan?: string }>;
 }) {
-  const plan = getPlan(searchParams.plan ?? null);
+  const { plan: planId } = await searchParams;
+  const plan = getPlan(planId ?? null);
 
   return (
     <main className="flex min-h-[calc(100vh-4rem)] flex-col items-center px-4 py-10">

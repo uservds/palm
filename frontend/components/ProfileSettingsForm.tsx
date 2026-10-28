@@ -4,16 +4,17 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MockUser } from "@/lib/mockProfile";
+import type { ProfileUser } from "@/components/ProfileHeader";
 
-export default function ProfileSettingsForm({ user }: { user: MockUser }) {
+export default function ProfileSettingsForm({ user }: { user: ProfileUser }) {
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);
   const [isLeftHanded, setIsLeftHanded] = useState<boolean | null>(user.isLeftHanded);
   const [saved, setSaved] = useState(false);
 
   function handleSave() {
-    // TODO (Приоритет 2): PATCH /api/profile
+    // TODO (блок Profile/Auth, отдельно от Payment): PATCH /api/profile —
+    // сейчас нет ни эндпоинта, ни поля isLeftHanded в Prisma-схеме User.
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }

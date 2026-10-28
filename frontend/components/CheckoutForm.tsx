@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import PaymentMethodSelector, { PaymentMethod } from "@/components/PaymentMethodSelector";
 import { CheckoutPlan } from "@/lib/checkoutPlans";
+import { createPayment } from "@/lib/payment";
+import { ApiError } from "@/lib/api";
 import { ShieldCheck } from "lucide-react";
 
 export default function CheckoutForm({ plan }: { plan: CheckoutPlan }) {
   const router = useRouter();
-  const [method, setMethod] = useState<PaymentMethod>("card");
+  const [method, setMethod] = useState<PaymentMethod>("yookassa");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,17 +19,18 @@ export default function CheckoutForm({ plan }: { plan: CheckoutPlan }) {
     setError(null);
     setLoading(true);
     try {
-      // TODO (Приоритет 5): POST /api/payment/create { planId: plan.id, method }
-      // затем редирект на confirmation_url, который вернёт провайдер
-      await new Promise((resolve, reject) =>
-        setTimeout(() => {
-          // имитация: 90% успеха, чтобы можно было проверить оба состояния
-          Math.random() < 0.9 ? resolve(true) : reject(new Error("payment_failed"));
-        }, 1200)
+      const { confirmationUrl } = await createPayment(plan.id, { method });
+      window.location.href = confirmationUrl;
+    } catch (err) {
+      if (err instanceof ApiError && err.code === "UNAUTHORIZED") {
+        router.push(`/login?redirect=/checkout?plan=${plan.id}`);
+        return;
+      }
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "Не удалось обработать платёж. Попробуйте другой способ оплаты."
       );
-      router.push(`/checkout/success?plan=${plan.id}`);
-    } catch {
-      setError("Не удалось обработать платёж. Попробуйте другой способ оплаты.");
     } finally {
       setLoading(false);
     }

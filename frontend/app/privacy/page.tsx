@@ -9,6 +9,7 @@ const sections = [
   { id: "rights", title: "6. Ваши права" },
   { id: "refund", title: "7. Условия возврата средств" },
   { id: "contacts", title: "8. Контакты" },
+  { id: "requisites", title: "9. Реквизиты" },
 ];
 
 export default function PrivacyPage() {
@@ -120,6 +121,22 @@ export default function PrivacyPage() {
           <h2 className="text-lg font-semibold">8. Контакты</h2>
           <p className="mt-2 text-content-muted">
             По вопросам конфиденциальности и возвратов: support@palmai.ru
+          </p>
+        </section>
+
+        <section id="requisites">
+          <h2 className="text-lg font-semibold">9. Реквизиты</h2>
+          <p className="mt-2 text-content-muted">
+            Самозанятый: Сорокин Вадим Вениаминович
+          </p>
+          <p className="mt-2 text-content-muted">
+            ИНН: 000000000000
+          </p>
+          <p className="mt-2 text-content-muted">
+            Телефон: +7 (000) 000-00-00
+          </p>
+          <p className="mt-2 text-content-muted">
+            Email: support@palmai.ru
           </p>
         </section>
       </div>

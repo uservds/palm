@@ -2,7 +2,16 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MockUser } from "@/lib/mockProfile";
+
+// Общий тип для реального пользователя (/api/auth/me) и настроек профиля.
+// isLeftHanded пока не хранится на backend — только локальное состояние формы.
+export type ProfileUser = {
+  name: string;
+  email: string;
+  createdAt: string;
+  avatarUrl?: string;
+  isLeftHanded: boolean | null;
+};
 
 function getInitials(name: string) {
   return name
@@ -21,7 +30,7 @@ function formatDate(iso: string) {
   });
 }
 
-export default function ProfileHeader({ user }: { user: MockUser }) {
+export default function ProfileHeader({ user }: { user: ProfileUser }) {
   return (
     <div className="flex items-center gap-4 rounded-2xl border border-content-border bg-surface p-6">
       <Avatar className="h-16 w-16">

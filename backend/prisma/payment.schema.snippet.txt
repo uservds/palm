@@ -1,0 +1,25 @@
+// Добавить в backend/prisma/schema.prisma
+
+model Payment {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  amount            Int      // сумма в копейках (399 ₽ = 39900)
+  currency          String   @default("RUB")
+  provider          String   // "yookassa" | "cloudpayments"
+  providerPaymentId String?  @unique // id платежа на стороне провайдера
+  status            String   @default("pending") // pending | succeeded | canceled | refunded
+  type              String   // "report" | "compatibility" | "subscription"
+  metadata          Json?    // scanId / compatibilityId / subscriptionPeriod и т.п.
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+// В модели User добавить обратную связь:
+//   payments Payment[]
+//
+// После правки:
+//   npx prisma migrate dev --name add_payments

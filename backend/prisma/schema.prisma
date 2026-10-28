@@ -18,6 +18,7 @@ model User {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   refreshTokens RefreshToken[]
+  payments      Payment[]
 
   @@map("users")
 }
@@ -32,4 +33,21 @@ model RefreshToken {
   revokedAt DateTime?
 
   @@map("refresh_tokens")
+}
+model Payment {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  amount            Int
+  currency          String   @default("RUB")
+  provider          String
+  providerPaymentId String?  @unique
+  status            String   @default("pending")
+  type              String
+  metadata          Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
 }

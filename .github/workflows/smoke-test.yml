@@ -1,0 +1,166 @@
+﻿name: Backend Smoke Test (Vision + Compatibility)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+  workflow_dispatch: {}
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: palmai
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Run Prisma migrations
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/palmai
+        run: npx prisma migrate deploy
+
+      - name: Create .env
+        working-directory: backend
+        env:
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+        run: |
+          cat > .env << EOF
+          PORT=3001
+          DATABASE_URL=postgresql://postgres:postgres@localhost:5432/palmai
+          FRONTEND_URL=http://localhost:3000
+
+          MOCK_VISION=false
+
+          AI_PROVIDER=gemini
+          AI_API_KEY=${AI_API_KEY}
+          AI_MODEL=gemini-flash-latest
+          AI_FALLBACK_PROVIDER=mock
+          AI_TIMEOUT_MS=20000
+
+          MAX_IMAGE_MB=5
+          ALLOWED_MIME_TYPES=image/jpeg,image/png,image/webp
+
+          JWT_ACCESS_SECRET=ci-insecure-access-secret
+          JWT_REFRESH_SECRET=ci-insecure-refresh-secret
+          JWT_ACCESS_EXPIRES_IN=15m
+          JWT_REFRESH_EXPIRES_IN=30d
+          BCRYPT_SALT_ROUNDS=10
+          EOF
+
+      - name: Start backend
+        working-directory: backend
+        run: |
+          npm run dev &
+          echo $! > server.pid
+
+      - name: Wait for /health
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3001/health > /dev/null; then
+              echo "Backend is up"
+              exit 0
+            fi
+            echo "Waiting for backend... ($i/30)"
+            sleep 1
+          done
+          echo "Backend did not start in time"
+          exit 1
+
+      - name: Generate test images
+        working-directory: backend
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq imagemagick
+          convert -size 400x400 xc:beige -fill saddlebrown -draw "circle 200,200 200,50" test_palm_a.jpg
+          convert -size 400x400 xc:lightblue -fill darkslateblue -draw "circle 200,200 200,50" test_palm_b.jpg
+
+      - name: Smoke test — /api/vision
+        working-directory: backend
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X POST http://localhost:3001/api/vision \
+            -F "image=@test_palm_a.jpg")
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$ d')
+          echo "$body" | python3 -m json.tool
+          echo "HTTP status: $http_code"
+
+          provider=$(echo "$body" | python3 -c "import json,sys; print(json.load(sys.stdin).get('meta', {}).get('provider', 'MISSING'))")
+          echo "Provider used: $provider"
+
+          if [ "$provider" = "mock" ]; then
+            echo "::warning::Vision fell back to mock provider — AI call failed, check logs above"
+          fi
+
+          if [ "$http_code" != "200" ]; then
+            echo "::error::Vision smoke test failed with HTTP $http_code"
+            exit 1
+          fi
+
+      - name: Smoke test — /api/compatibility/couple
+        working-directory: backend
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X POST http://localhost:3001/api/compatibility/couple \
+            -F "image_a=@test_palm_a.jpg" \
+            -F "image_b=@test_palm_b.jpg" \
+            -F "gender_b=female")
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$ d')
+          echo "$body" | python3 -m json.tool
+          echo "HTTP status: $http_code"
+
+          provider=$(echo "$body" | python3 -c "import json,sys; print(json.load(sys.stdin).get('meta', {}).get('provider', 'MISSING'))")
+          is_fallback=$(echo "$body" | python3 -c "import json,sys; print(json.load(sys.stdin).get('is_fallback', 'MISSING'))")
+          image_quality_a=$(echo "$body" | python3 -c "import json,sys; print(json.load(sys.stdin).get('image_quality', {}).get('a'))")
+          image_quality_b=$(echo "$body" | python3 -c "import json,sys; print(json.load(sys.stdin).get('image_quality', {}).get('b'))")
+
+          echo "Provider used: $provider"
+          echo "is_fallback: $is_fallback"
+
+          if [ "$image_quality_a" = "None" ] || [ "$image_quality_b" = "None" ]; then
+            echo "::error::image_quality.a or image_quality.b is null — regression of the fixed bug"
+            exit 1
+          fi
+
+          if [ "$provider" = "mock" ]; then
+            echo "::warning::Compatibility fell back to mock provider — AI call failed, check logs above (likely network/geo/key issue, not a code bug)"
+          fi
+
+          if [ "$http_code" != "200" ]; then
+            echo "::error::Compatibility smoke test failed with HTTP $http_code"
+            exit 1
+          fi
+
+      - name: Stop backend
+        if: always()
+        working-directory: backend
+        run: |
+          if [ -f server.pid ]; then
+            kill $(cat server.pid) 2>/dev/null || true
+          fi

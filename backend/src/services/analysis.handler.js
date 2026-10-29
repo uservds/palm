@@ -14,15 +14,23 @@ import {
 const BAD_IMAGE_THRESHOLD = 45;
 
 /**
- * Shared analysis logic for /api/vision.
- * Image buffer is kept only in memory and never written to disk.
+ * Low-level: AI call + Zod validation + image quality gate for ONE hand.
+ * No moderation, no report assembly — just raw validated observations.
+ * Used by both analyzePalm() (/api/vision) and compatibility.service.js
+ * (/api/compatibility/*, once per hand), so the AI call isn't duplicated.
+ *
+ * On success, does NOT call logVisionFinish — the caller owns the final
+ * "ok" log entry (analyzePalm logs it after moderation; compatibility.service
+ * logs it once for the whole couple request). On any failure path this
+ * still logs and returns the same { ok:false, error } shape as before, so
+ * callers can return it straight through.
  *
  * @param {Buffer} buffer
  * @param {string} mimeType
- * @returns {Promise<Object>}
+ * @param {string} [requestIdPrefix] - optional label for logs, e.g. 'couple:a'
  */
-export async function analyzePalm(buffer, mimeType) {
-  const requestId = generateRequestId();
+export async function extractPalmObservations(buffer, mimeType, requestIdPrefix = '') {
+  const requestId = (requestIdPrefix ? `${requestIdPrefix}:` : '') + generateRequestId();
   const startTime = Date.now();
 
   const imageBase64 = buffer.toString('base64');
@@ -202,6 +210,26 @@ export async function analyzePalm(buffer, mimeType) {
     };
   }
 
+  return { ok: true, data: result, provider: activeProvider, isFallback, requestId, startTime };
+}
+
+/**
+ * Shared analysis logic for /api/vision.
+ * Image buffer is kept only in memory and never written to disk.
+ *
+ * @param {Buffer} buffer
+ * @param {string} mimeType
+ * @returns {Promise<Object>}
+ */
+export async function analyzePalm(buffer, mimeType) {
+  const extracted = await extractPalmObservations(buffer, mimeType);
+
+  if (!extracted.ok) {
+    return extracted;
+  }
+
+  let { data: result, provider: activeProvider, isFallback, requestId, startTime } = extracted;
+
   // ------------------------------------------------------------
   // 7. Moderation / safety filter
   // ------------------------------------------------------------
@@ -211,6 +239,9 @@ export async function analyzePalm(buffer, mimeType) {
     try {
       activeProvider = new MockProvider();
       isFallback = true;
+
+      const imageBase64 = buffer.toString('base64');
+      const prompt = buildVisionPrompt();
 
       result = await activeProvider.analyze({
         imageBase64,

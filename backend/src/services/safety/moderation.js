@@ -31,7 +31,7 @@ function sanitizeText(text) {
 }
 
 /**
- * Post-filter AI report.
+ * Post-filter AI report (Vision — /api/vision shape: result.report.*).
  * Returns { result, needsFallback }.
  */
 export function moderateReport(result) {
@@ -75,6 +75,54 @@ export function moderateReport(result) {
   if (removed > 3) return { result, needsFallback: true };
 
   return { result: { ...result, report }, needsFallback: false };
+}
+
+/**
+ * Post-filter AI report for Compatibility (/api/compatibility/* shape —
+ * FLAT, no .report wrapper; free_insights/locked_blocks are objects with
+ * text/teaser fields, not plain strings). moderateReport() above cannot be
+ * reused as-is: result.report is undefined on this shape and it would throw
+ * on `for (const t of report.free_insights)`.
+ *
+ * Returns { result, needsFallback } — same contract as moderateReport().
+ */
+export function moderateCompatibilityReport(result) {
+  const report = { ...result };
+  let removed = 0;
+
+  // free_insights — objects {section_id, title, text}
+  const insights = [];
+  for (const item of report.free_insights) {
+    const s = sanitizeText(item.text);
+    if (s) insights.push({ ...item, text: s });
+    else removed++;
+  }
+  if (insights.length === 0) return { result, needsFallback: true };
+  report.free_insights = insights;
+
+  // locked_blocks — objects {section_id, title, teaser}
+  const blocks = [];
+  for (const b of report.locked_blocks) {
+    const s = sanitizeText(b.teaser);
+    if (s) blocks.push({ ...b, teaser: s });
+    else removed++;
+  }
+  // compatibilityReportSchema requires .min(8) — if cleaning drops below
+  // that, a valid object can't be assembled anyway, so fall back early
+  if (blocks.length < 8) return { result, needsFallback: true };
+  report.locked_blocks = blocks;
+
+  // disclaimer
+  if (!report.disclaimer || report.disclaimer.length < 10) {
+    report.disclaimer = DEFAULT_DISCLAIMER;
+  }
+
+  // overall_score — clamp defensively, same spirit as progress_percent above
+  report.overall_score = Math.max(0, Math.min(100, report.overall_score ?? 50));
+
+  if (removed > 3) return { result, needsFallback: true };
+
+  return { result: report, needsFallback: false };
 }
 
 export function getDefaultDisclaimer() {

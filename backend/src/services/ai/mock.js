@@ -55,11 +55,44 @@ const MOCK_RESULT = {
   },
 };
 
+// Заглушка под compatibilityReportSchema — используется ТОЛЬКО если
+// MockProvider оказался в роли analyzeText-провайдера (например, как
+// AI_FALLBACK_PROVIDER по умолчанию) в цепочке Compatibility ДО того, как
+// дело дойдёт до buildMockCompatibilityResult() внутри compatibility.service.js
+// (тот строит осмысленный fallback из реальных KB-findings, а не хардкода,
+// и используется как последний рубеж). Эта заглушка — просто чтобы цепочка
+// провайдеров не падала с TypeError на отсутствующем методе раньше времени.
+const MOCK_COMPATIBILITY_RESULT = {
+  couple_archetype: { name: 'Параллельные Пути', energies: ['Независимость', 'Уважение'] },
+  overall_score: 55,
+  free_insights: [
+    { section_id: 'emotional_resonance', title: 'Эмоциональный резонанс', text: 'Заглушка mock-провайдера для совместимости.' },
+    { section_id: 'communication_style', title: 'Стиль общения', text: 'Заглушка mock-провайдера для совместимости.' },
+  ],
+  locked_blocks: [
+    { section_id: 'life_pace', title: 'Темп жизни и энергия', teaser: 'Заглушка.' },
+    { section_id: 'shared_goals', title: 'Общие цели и амбиции', teaser: 'Заглушка.' },
+    { section_id: 'conflict_pattern', title: 'Паттерн конфликтов', teaser: 'Заглушка.' },
+    { section_id: 'intimacy', title: 'Телесная и чувственная близость', teaser: 'Заглушка.' },
+    { section_id: 'financial_sync', title: 'Финансовая синхронность', teaser: 'Заглушка.' },
+    { section_id: 'growth_potential', title: 'Потенциал совместного роста', teaser: 'Заглушка.' },
+    { section_id: 'vulnerability_zones', title: 'Зоны уязвимости пары', teaser: 'Заглушка.' },
+    { section_id: 'support_dynamic', title: 'Кто кого поддерживает в кризис', teaser: 'Заглушка.' },
+  ],
+  disclaimer: 'Palmis AI носит развлекательный характер.',
+  cta: 'Откройте полный разбор',
+};
+
 export class MockProvider {
   name = 'mock';
 
   async analyze(_params) {
     await new Promise((resolve) => setTimeout(resolve, 300));
     return JSON.parse(JSON.stringify(MOCK_RESULT));
+  }
+
+  async analyzeText(_params) {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    return JSON.parse(JSON.stringify(MOCK_COMPATIBILITY_RESULT));
   }
 }

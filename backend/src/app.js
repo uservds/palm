@@ -5,6 +5,7 @@ import { config } from './config/env.js';
 import { visionRouter } from './routes/vision.routes.js';
 import { authRouter } from './routes/auth.routes.js';
 import { paymentRouter } from './routes/payment.routes.js';
+import { compatibilityRouter } from './routes/compatibility.routes.js';
 
 export function buildApp() {
   const app = express();
@@ -22,6 +23,7 @@ export function buildApp() {
   app.use(visionRouter);
   app.use(authRouter);
   app.use(paymentRouter);
+  app.use(compatibilityRouter);
 
   app.use((err, _req, res, _next) => {
     const isMulterError =

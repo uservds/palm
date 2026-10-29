@@ -31,13 +31,83 @@ export class OpenRouterProvider {
             },
             {
               type: 'text',
-              text: 'РџСЂРѕР°РЅР°Р»РёР·РёСЂСѓР№ РёР·РѕР±СЂР°Р¶РµРЅРёРµ Р»Р°РґРѕРЅРё Рё РІРµСЂРЅРё СЃС‚СЂРѕРіРѕ JSON.',
+              text: 'Проанализируй изображение ладони и верни строго JSON.',
             },
           ],
         },
       ],
       temperature: 0.3,
       max_tokens: 4096,
+    };
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), config.AI_TIMEOUT_MS);
+
+    try {
+      const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timer);
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error(`OpenRouter API ${resp.status}: ${errText.slice(0, 200)}`);
+      }
+
+      const json = await resp.json();
+      const text = json?.choices?.[0]?.message?.content;
+
+      if (!text) {
+        throw new Error('OpenRouter returned empty response');
+      }
+
+      const parsed = extractJsonFromText(text);
+
+      if (!parsed) {
+        throw new Error('Failed to parse OpenRouter response');
+      }
+
+      return parsed;
+    } catch (err) {
+      clearTimeout(timer);
+
+      if (err?.name === 'AbortError') {
+        throw new Error(`OpenRouter timed out after ${config.AI_TIMEOUT_MS}ms`);
+      }
+
+      throw err;
+    }
+  }
+
+  /**
+   * Текстовый вызов без картинки — для Compatibility. В отличие от
+   * analyze(), здесь один user-месседж без отдельного system: промпт из
+   * buildCompatibilityPrompt() уже самодостаточен (роль + данные +
+   * требования к формату в одном тексте).
+   */
+  async analyzeText(params) {
+    const { prompt } = params;
+    const apiKey = config.AI_API_KEY;
+    const model = config.AI_MODEL || 'google/gemini-flash-1.5';
+
+    if (!apiKey) {
+      throw new Error('OpenRouter API key is not configured');
+    }
+
+    const body = {
+      model,
+      messages: [
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.4,
+      max_tokens: 2048,
     };
 
     const controller = new AbortController();

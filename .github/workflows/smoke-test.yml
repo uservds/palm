@@ -41,6 +41,10 @@ jobs:
         working-directory: backend
         run: npm ci
 
+      - name: Generate Prisma client
+        working-directory: backend
+        run: npx prisma generate
+
       - name: Run Prisma migrations
         working-directory: backend
         env:
@@ -164,3 +168,4 @@ jobs:
           if [ -f server.pid ]; then
             kill $(cat server.pid) 2>/dev/null || true
           fi
+

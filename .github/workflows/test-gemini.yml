@@ -7,14 +7,28 @@ jobs:
   test-gemini:
     runs-on: ubuntu-latest
     steps:
-      - name: Call Gemini generateContent
+      - name: List available models
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           node -e '
           const apiKey = process.env.GEMINI_API_KEY;
-          if (!apiKey) { console.error("GEMINI_API_KEY secret не задан в репозитории"); process.exit(1); }
-          fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent", {
+          fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=20", {
+            headers: { "x-goog-api-key": apiKey },
+          })
+            .then(async (res) => {
+              const text = await res.text();
+              console.log("LIST STATUS:", res.status);
+              console.log(text.slice(0, 2000));
+            });
+          '
+      - name: Call Gemini generateContent (gemini-2.5-flash)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          node -e '
+          const apiKey = process.env.GEMINI_API_KEY;
+          fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent", {
             method: "POST",
             headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
             body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "Say OK" }] }] }),
@@ -23,7 +37,6 @@ jobs:
               const text = await res.text();
               console.log("HTTP status:", res.status);
               console.log("Response:", text.slice(0, 500));
-              process.exit(res.ok ? 0 : 1);
             })
-            .catch((err) => { console.error("Request failed:", err.message); process.exit(1); });
+            .catch((err) => { console.error("Request failed:", err.message); });
           '

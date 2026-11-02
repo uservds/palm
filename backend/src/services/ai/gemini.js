@@ -1,4 +1,4 @@
-import { config } from '../../config/env.js';
+﻿import { config } from '../../config/env.js';
 import { extractJsonFromText } from '../../utils/json.js';
 
 export class GeminiProvider {
@@ -6,8 +6,8 @@ export class GeminiProvider {
 
   async analyze(params) {
     const { imageBase64, mimeType, prompt } = params;
-    const apiKey = config.AI_API_KEY;
-    const model = config.AI_MODEL || 'gemini-1.5-flash';
+    const apiKey = config.GEMINI_API_KEY;
+    const model = config.GEMINI_MODEL || 'gemini-flash-latest';
 
     if (!apiKey) {
       throw new Error('Gemini API key is not configured');
@@ -99,8 +99,8 @@ export class GeminiProvider {
    */
   async analyzeText(params) {
     const { prompt } = params;
-    const apiKey = config.AI_API_KEY;
-    const model = config.AI_MODEL || 'gemini-1.5-flash';
+    const apiKey = config.GEMINI_API_KEY;
+    const model = config.GEMINI_MODEL || 'gemini-flash-latest';
 
     if (!apiKey) {
       throw new Error('Gemini API key is not configured');

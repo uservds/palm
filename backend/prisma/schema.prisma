@@ -21,6 +21,9 @@ model User {
   payments      Payment[]
 
   @@map("users")
+  natalCharts         NatalChart[]
+  weddingDateRequests WeddingDateRequest[]
+  dailyHoroscopes     DailyHoroscope[]
 }
 
 model RefreshToken {
@@ -50,4 +53,107 @@ model Payment {
 
   @@index([userId])
   @@index([status])
+}
+model NatalChart {
+  id String @id @default(cuid())
+
+  birthDate  DateTime
+  birthTime  String?
+  timeKnown  Boolean  @default(true)
+  birthPlace String
+  birthLat   Float?
+  birthLng   Float?
+  timezone   String?
+
+  positions Json?
+
+  calculatedAt DateTime?
+  calcError    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  weddingRequestsAsPartner1 WeddingDateRequest[] @relation("Partner1Chart")
+  weddingRequestsAsPartner2 WeddingDateRequest[] @relation("Partner2Chart")
+  dailyHoroscopes           DailyHoroscope[]
+
+  @@index([userId])
+}
+
+model WeddingDateRequest {
+  id String @id @default(cuid())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  partner1ChartId String
+  partner1Chart   NatalChart @relation("Partner1Chart", fields: [partner1ChartId], references: [id])
+  partner2ChartId String
+  partner2Chart   NatalChart @relation("Partner2Chart", fields: [partner2ChartId], references: [id])
+
+  eventCity     String
+  eventLat      Float?
+  eventLng      Float?
+  eventTimezone String?
+
+  periodStart DateTime
+  periodEnd   DateTime
+
+  status      String    @default("pending")
+  errorMsg    String?
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  candidates WeddingDateCandidate[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model WeddingDateCandidate {
+  id        String             @id @default(cuid())
+  requestId String
+  request   WeddingDateRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  candidateDate DateTime
+  score         Float
+  rank          Int
+  passedFilters Boolean
+
+  venusRetrograde   Boolean
+  mercuryRetrograde Boolean
+  moonPhase         String
+  angularConflicts  Json
+
+  explanation String?
+
+  createdAt DateTime @default(now())
+
+  @@index([requestId])
+  @@index([requestId, rank])
+}
+
+model DailyHoroscope {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  natalChartId String
+  natalChart   NatalChart @relation(fields: [natalChartId], references: [id])
+
+  date    DateTime
+  content String   @db.Text
+
+  transitData Json
+
+  sentChannels Json?
+  sentAt       DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date])
+  @@index([userId])
 }

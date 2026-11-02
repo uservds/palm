@@ -2,12 +2,10 @@
 
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { FriendshipArchetype } from "@/lib/friendshipArchetypes";
+import type { GroupCompatibilitySuccessResponse } from "@/lib/api";
 
 type Props = {
-  archetype: FriendshipArchetype;
-  compatibilityPercent: number;
-  participantCount: number;
+  report: GroupCompatibilitySuccessResponse;
 };
 
 const EMAIL_FORMAT = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -23,11 +21,7 @@ function isEmailAllowed(email: string): boolean {
   return !!tld && ALLOWED_TLDS.includes(tld);
 }
 
-export default function TeaserReportFriendship({
-  archetype,
-  compatibilityPercent,
-  participantCount,
-}: Props) {
+export default function TeaserReportFriendship({ report }: Props) {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
@@ -42,35 +36,37 @@ export default function TeaserReportFriendship({
     setSent(true);
   }
 
+  const topFinding = report.free_insights[0];
+
   return (
     <div className="mt-8 rounded-2xl border border-[var(--color-accent-soft)] bg-[var(--color-accent-soft)] p-6">
       <div className="flex items-center justify-between">
         <span className="rounded-full bg-[var(--color-neutral-badge)] px-3 py-1 text-xs font-medium text-[var(--color-neutral-badgeText)]">
-          {participantCount} участника в группе
+          {report.participant_count} участника в группе
         </span>
         <span className="text-2xl font-semibold text-[var(--color-content-main)]">
-          {compatibilityPercent}%
+          {report.overall_score}%
         </span>
       </div>
 
       <h2 className="mt-4 text-lg font-semibold text-[var(--color-content-main)]">
-        Архетип вашей компании: «{archetype.title}»
+        Архетип вашей компании: «{report.group_archetype.title}»
       </h2>
       <p className="mt-1 text-sm text-[var(--color-content-muted)]">
-        {archetype.description}
+        {report.group_archetype.description}
       </p>
 
-      <p className="mt-4 flex items-start gap-2 text-sm text-[var(--color-content-main)]">
-        <span>✓</span>
-        <span>{archetype.finding}</span>
-      </p>
+      {topFinding && (
+        <p className="mt-4 text-sm text-[var(--color-content-main)]">
+          {topFinding.text}
+        </p>
+      )}
 
       {!sent ? (
         <>
           <p className="mt-5 text-sm text-[var(--color-content-muted)]">
-            Это только часть картины. Полный разбор покажет, как каждый из
-            вас влияет на динамику группы — и где точки будущих
-            разногласий.
+            {report.cta ||
+              "Это только часть картины. Полный разбор покажет, как каждый из вас влияет на динамику группы — и где точки будущих разногласий."}
           </p>
           <form onSubmit={handleSubmit} className="mt-3 flex gap-2">
             <Input

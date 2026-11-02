@@ -215,3 +215,192 @@ function buildMockCompatibilityResult(findings, coupleArchetype) {
     cta: 'Откройте полный разбор вашей пары',
   };
 }
+
+// ============================================================
+// Group compatibility (friendship / business), 2–4 участника
+// ============================================================
+
+const SERVER_GROUP_ARCHETYPES = {
+  friendship: [
+    { title: 'Два Якоря', description: 'Стабильность и надёжность — то, что связывает эту компанию крепче всего.', min: 0, max: 60 },
+    { title: 'Искры и Топливо', description: 'Один генерирует идеи, другие доводят их до результата — рабочий дружеский тандем.', min: 60, max: 75 },
+    { title: 'Созвездие', description: 'Каждый яркий по-своему, но вместе вы складываетесь в узнаваемый рисунок.', min: 75, max: 85 },
+    { title: 'Зеркала', description: 'Схожий взгляд на мир создаёт редкое чувство — быть понятым без слов.', min: 85, max: 101 },
+  ],
+  business: [
+    { title: 'Фундамент и Фасад', description: 'Один выстраивает процессы и устойчивость, другой — репутацию и внешние связи.', min: 0, max: 60 },
+    { title: 'Два Капитана', description: 'Оба склонны брать управление на себя — потребуется чёткое разграничение зон влияния.', min: 60, max: 75 },
+    { title: 'Разведчик и Штаб', description: 'Один идёт в новые направления, другой просчитывает риски — эффективный тандем для роста.', min: 75, max: 85 },
+    { title: 'Стратег и Исполнитель', description: 'Классическое разделение ролей: один видит картину на годы вперёд, другой превращает план в результат.', min: 85, max: 101 },
+  ],
+};
+
+function pickGroupArchetypeServerSide(kind, score) {
+  const list = SERVER_GROUP_ARCHETYPES[kind];
+  const clamped = Math.max(0, Math.min(100, score));
+  const match = list.find((a) => clamped >= a.min && clamped < a.max);
+  return match || list[0];
+}
+
+/**
+ * Группа 2–4 участников. Сканируем все ладони, считаем findings для каждой
+ * уникальной пары (buildCompatibilityFindings — тот же KB, что в couple),
+ * общий score — среднее по всем парам. Архетип — по среднему score.
+ *
+ * @param {Object} params
+ * @param {'friendship'|'business'} params.kind
+ * @param {{buffer: Buffer, mimeType: string}[]} params.participants
+ */
+export async function analyzeGroupCompatibility({ kind, participants }) {
+  const requestId = generateRequestId();
+  const startTime = Date.now();
+
+  if (!['friendship', 'business'].includes(kind)) {
+    return { ok: false, error: { code: 'INVALID_INPUT', user_message: 'Некорректный тип разбора.' } };
+  }
+  if (participants.length < 2 || participants.length > 4) {
+    return { ok: false, error: { code: 'INVALID_INPUT', user_message: 'Нужно от 2 до 4 участников.' } };
+  }
+
+  // 1. Сканируем все ладони параллельно
+  const results = await Promise.all(
+    participants.map((p, i) => extractPalmObservations(p.buffer, p.mimeType, `${kind}:${i}`))
+  );
+
+  for (let i = 0; i < results.length; i++) {
+    if (!results[i].ok) {
+      return { ok: false, error: { ...results[i].error, details: { ...results[i].error.details, participant: i } } };
+    }
+  }
+
+  const observations = results.map((r) => r.data.observations);
+  const imageQualities = results.map((r) => r.data.image_quality || null);
+  const isFallback = results.some((r) => r.isFallback);
+
+  // 2. Все уникальные пары → findings → усредняем overall_score
+  const pairFindings = [];
+  for (let i = 0; i < observations.length; i++) {
+    for (let j = i + 1; j < observations.length; j++) {
+      pairFindings.push(buildCompatibilityFindings(observations[i], observations[j]));
+    }
+  }
+  const overallScore = Math.round(
+    pairFindings.reduce((sum, f) => sum + f.overall_score, 0) / pairFindings.length
+  );
+
+  const groupArchetype = pickGroupArchetypeServerSide(kind, overallScore);
+
+  // 3. Текст через Gemini — берём лучшую пару (макс. score) как основу находок,
+  //    остальное — детерминированный fallback-билдер ниже.
+  const primaryProvider = getProvider();
+  const fallbackProvider = getFallbackProvider();
+  let activeProvider = primaryProvider;
+  let providerIsFallback = false;
+  let result = null;
+
+  const bestPair = pairFindings.reduce((a, b) => (a.overall_score >= b.overall_score ? a : b));
+  const prompt = buildCompatibilityPrompt({
+    findings: bestPair,
+    coupleArchetype: groupArchetype,
+    genderA: 'female',
+    genderB: 'female',
+  });
+
+  try {
+    result = await activeProvider.analyzeText({ prompt });
+  } catch (err) {
+    logVisionError(requestId, 'GROUP_AI_CALL_FAILED', err instanceof Error ? err.message : 'Unknown AI error');
+    try {
+      activeProvider = fallbackProvider;
+      providerIsFallback = true;
+      result = await activeProvider.analyzeText({ prompt });
+    } catch (fbErr) {
+      logVisionError(requestId, 'GROUP_FALLBACK_FAILED', fbErr instanceof Error ? fbErr.message : 'Unknown fallback error');
+      return {
+        ok: false,
+        error: { code: 'AI_UNAVAILABLE', user_message: 'Сервис анализа временно недоступен. Попробуйте позже.' },
+      };
+    }
+  }
+
+  let validated = compatibilityReportSchema.safeParse(result);
+
+  if (!validated.success) {
+    logVisionError(requestId, 'GROUP_VALIDATION_FAILED', JSON.stringify(validated.error.issues).slice(0, 300));
+    try {
+      activeProvider = new MockProvider();
+      providerIsFallback = true;
+      result = buildMockGroupResult(kind, groupArchetype);
+      validated = compatibilityReportSchema.safeParse(result);
+      if (!validated.success) throw new Error('Mock group fallback invalid');
+    } catch (finalErr) {
+      logVisionError(requestId, 'GROUP_FINAL_FALLBACK_FAILED', finalErr instanceof Error ? finalErr.message : 'Final fallback failed');
+      return {
+        ok: false,
+        error: { code: 'AI_INVALID_RESPONSE', user_message: 'Не удалось сформировать отчёт. Попробуйте позже.' },
+      };
+    }
+  }
+
+  result = validated.data;
+  result.couple_archetype = { name: groupArchetype.title, energies: [] };
+  result.overall_score = overallScore;
+
+  const moderated = moderateCompatibilityReport(result);
+  if (moderated.needsFallback) {
+    logVisionError(requestId, 'GROUP_MODERATION_FALLBACK', 'unsafe content removed, falling back to KB-only result');
+    result = buildMockGroupResult(kind, groupArchetype);
+    providerIsFallback = true;
+  } else {
+    result = moderated.result;
+  }
+
+  const durationMs = Date.now() - startTime;
+  logVisionFinish(requestId, activeProvider.name, config.AI_MODEL, durationMs, 'ok', isFallback || providerIsFallback);
+
+  return {
+    ok: true,
+    group_archetype: { title: groupArchetype.title, description: groupArchetype.description },
+    overall_score: overallScore,
+    participant_count: participants.length,
+    free_insights: result.free_insights,
+    locked_blocks: result.locked_blocks,
+    disclaimer: result.disclaimer || getDefaultDisclaimer(),
+    cta: result.cta,
+    image_quality: imageQualities,
+    is_fallback: isFallback || providerIsFallback,
+    meta: {
+      provider: activeProvider.name,
+      model: config.AI_MODEL,
+      processing_time_ms: durationMs,
+    },
+  };
+}
+
+function buildMockGroupResult(kind, groupArchetype) {
+  const isBusiness = kind === 'business';
+  return {
+    couple_archetype: { name: groupArchetype.title, energies: [] },
+    overall_score: 70,
+    free_insights: [
+      {
+        section_id: 'group_dynamic',
+        title: isBusiness ? 'Распределение ролей' : 'Групповая динамика',
+        text: groupArchetype.description,
+      },
+    ],
+    locked_blocks: isBusiness
+      ? [
+          { section_id: 'role_distribution', title: 'Распределение ролей в команде', teaser: 'Кто на самом деле ведёт, а кто исполняет.' },
+          { section_id: 'risk_zones', title: 'Зоны риска партнёрства', teaser: 'Что стоит закрыть до старта совместного дела.' },
+          { section_id: 'decision_style', title: 'Стиль принятия решений', teaser: 'Как вы реально договариваетесь в спорных ситуациях.' },
+        ]
+      : [
+          { section_id: 'group_roles', title: 'Роли в компании', teaser: 'Кто генератор идей, а кто держит группу вместе.' },
+          { section_id: 'friction_points', title: 'Точки будущих разногласий', teaser: 'Где чаще всего рождаются конфликты в такой группе.' },
+          { section_id: 'loyalty_pattern', title: 'Паттерн лояльности', teaser: 'На чём держится доверие в этой компании.' },
+        ],
+    disclaimer: getDefaultDisclaimer(),
+    cta: isBusiness ? 'Откройте полный разбор партнёрства' : 'Откройте полный разбор компании',
+  };
+}

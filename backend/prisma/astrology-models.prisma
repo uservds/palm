@@ -1,0 +1,144 @@
+// ============================================================================
+// БЛОК ASTROLOGY — модели для добавления в backend/prisma/schema.prisma
+// ============================================================================
+//
+// КУДА ВСТАВИТЬ: в конец существующего schema.prisma, после текущих моделей.
+// Клиент уже настроен с driver adapter (backend/src/lib/prisma.js,
+// @prisma/adapter-pg) — для этих моделей ничего в конфиге Prisma менять
+// не нужно, просто `npx prisma migrate dev --name add_astrology`.
+//
+// РУЧНЫЕ ПРАВКИ В СУЩЕСТВУЮЩЕЙ МОДЕЛИ User (сделать самостоятельно —
+// файла модели User у меня нет, поэтому не могу вставить автоматически):
+//
+//   model User {
+//     ...
+//     natalCharts         NatalChart[]
+//     weddingDateRequests WeddingDateRequest[]
+//     dailyHoroscopes     DailyHoroscope[]
+//   }
+//
+// ============================================================================
+
+/// Натальная карта — рассчитанные позиции планет и домов на момент рождения.
+/// Может принадлежать зарегистрированному пользователю (для гороскопа) ИЛИ
+/// быть "анонимной" картой партнёра внутри заявки на подбор даты свадьбы
+/// (партнёр необязательно имеет аккаунт — userId тогда null).
+model NatalChart {
+  id String @id @default(cuid())
+
+  // Данные рождения — то, что ввёл пользователь
+  birthDate  DateTime // только дата (UTC-полночь), реальное время — в birthTime
+  birthTime  String? // "HH:mm" в местном времени места рождения; null = время неизвестно
+  timeKnown  Boolean  @default(true) // false → дом/асцендент не считаем, только планеты
+  birthPlace String // человекочитаемое название ("Москва, Россия")
+  birthLat   Float?
+  birthLng   Float?
+  timezone   String? // IANA, например "Europe/Moscow" — из geo-tz по lat/lng
+
+  // Результат расчёта (ephemeris.js) — сериализован целиком, чтобы не
+  // городить отдельные таблицы под 10 планет и 12 домов на старте.
+  // Структура — см. JSDoc-тип NatalChartPositions в natalChart.service.js
+  positions Json?
+
+  calculatedAt DateTime? // null, пока расчёт не выполнен (стоит в очереди/ошибка)
+  calcError    String? // текст ошибки последнего расчёта, если был
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  weddingRequestsAsPartner1 WeddingDateRequest[] @relation("Partner1Chart")
+  weddingRequestsAsPartner2 WeddingDateRequest[] @relation("Partner2Chart")
+  dailyHoroscopes           DailyHoroscope[]
+
+  @@index([userId])
+}
+
+/// Заявка на подбор даты свадьбы. Партнёры НЕ обязаны быть пользователями
+/// сайта — их натальные карты создаются как анонимные NatalChart (userId=null),
+/// привязанные только к этой заявке.
+model WeddingDateRequest {
+  id String @id @default(cuid())
+
+  // userId — тот, кто оформил заявку (может быть null для гостевого сценария,
+  // если фича на старте не требует регистрации — уточнить при подключении
+  // оплаты/тарифа на этот раздел, см. README-astrology.md)
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  partner1ChartId String
+  partner1Chart   NatalChart @relation("Partner1Chart", fields: [partner1ChartId], references: [id])
+  partner2ChartId String
+  partner2Chart   NatalChart @relation("Partner2Chart", fields: [partner2ChartId], references: [id])
+
+  // Место и период проведения события — поля уже существуют в UI
+  // (WeddingPreferences: city, period), см. дорожная-карта.md
+  eventCity     String
+  eventLat      Float?
+  eventLng      Float?
+  eventTimezone String?
+
+  periodStart DateTime
+  periodEnd   DateTime
+
+  status      String    @default("pending") // pending | processing | completed | failed
+  errorMsg    String?
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  candidates WeddingDateCandidate[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+/// Один день-кандидат, прошедший (или не прошедший) фильтры, с итоговым
+/// скором и, для лучших N, текстовым объяснением от Gemini.
+model WeddingDateCandidate {
+  id        String             @id @default(cuid())
+  requestId String
+  request   WeddingDateRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  candidateDate DateTime // дата-кандидат (полдень по eventTimezone для расчёта)
+  score         Float // 0..100, итоговый скор с учётом всех правил
+  rank          Int // позиция в отсортированном списке по этой заявке
+  passedFilters Boolean // прошла ли жёсткие фильтры (ретро Венера/Меркурий)
+
+  venusRetrograde   Boolean
+  mercuryRetrograde Boolean
+  moonPhase         String // "new" | "waxing" | "full" | "waning"
+  angularConflicts  Json // [{ planet: "Mars", house: 7 }, ...] — что помешало
+
+  explanation String? // текст от Gemini — только для топ-кандидатов, не для всех
+
+  createdAt DateTime @default(now())
+
+  @@index([requestId])
+  @@index([requestId, rank])
+}
+
+/// Ежедневный гороскоп для зарегистрированного пользователя с сохранённой
+/// натальной картой. Одна запись на пользователя на календарный день.
+model DailyHoroscope {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  natalChartId String
+  natalChart   NatalChart @relation(fields: [natalChartId], references: [id])
+
+  date    DateTime // календарный день (UTC-полночь)
+  content String   @db.Text // текст от Gemini
+
+  transitData Json // позиции транзитных планет, использованные при генерации
+
+  sentChannels Json? // { telegram: true, max: false, email: true } — куда реально отправлено
+  sentAt       DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date])
+  @@index([userId])
+}

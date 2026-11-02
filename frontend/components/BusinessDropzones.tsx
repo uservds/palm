@@ -12,7 +12,7 @@ export type BusinessSlot = {
 type Props = {
   participantCount: number;
   onParticipantCountChange: (count: number) => void;
-  onAllFilesReady: (previewUrls: string[]) => void;
+  onAllFilesReady: (files: File[], previewUrls: string[]) => void;
 };
 
 const MIN_PARTICIPANTS = 2;
@@ -47,9 +47,12 @@ export default function BusinessDropzones({
       const next = prev.map((slot, i) =>
         i === index ? { ...slot, file, previewUrl } : slot
       );
-      const allFilled = next.every((s) => s.previewUrl !== null);
+      const allFilled = next.every((s) => s.file !== null && s.previewUrl !== null);
       if (allFilled) {
-        onAllFilesReady(next.map((s) => s.previewUrl!) as string[]);
+        onAllFilesReady(
+          next.map((s) => s.file!) as File[],
+          next.map((s) => s.previewUrl!) as string[]
+        );
       }
       return next;
     });

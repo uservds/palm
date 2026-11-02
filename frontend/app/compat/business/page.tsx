@@ -1,29 +1,59 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BusinessDropzones from "@/components/BusinessDropzones";
 import ScanSimulation from "@/components/ScanSimulation";
 import TeaserReportBusiness from "@/components/TeaserReportBusiness";
-import { getRandomBusinessArchetype, BusinessArchetype } from "@/lib/businessArchetypes";
+import { analyzeBusinessCompatibility, ApiError, type GroupCompatibilitySuccessResponse } from "@/lib/api";
+import { Button } from "@/components/ui/button";
 
-type Stage = "idle" | "scanning" | "result";
+type Stage = "idle" | "scanning" | "result" | "error";
 
 export default function BusinessCompatPage() {
   const [stage, setStage] = useState<Stage>("idle");
   const [participantCount, setParticipantCount] = useState(2);
   const [images, setImages] = useState<string[]>([]);
-  const [archetype, setArchetype] = useState<BusinessArchetype | null>(null);
-  const [percent, setPercent] = useState(0);
+  const [report, setReport] = useState<GroupCompatibilitySuccessResponse | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [animationDone, setAnimationDone] = useState(false);
 
-  function handleAllFilesReady(previewUrls: string[]) {
+  useEffect(() => {
+    if (animationDone && report && stage === "scanning") {
+      setStage("result");
+    }
+  }, [animationDone, report, stage]);
+
+  function handleAllFilesReady(files: File[], previewUrls: string[]) {
     setImages(previewUrls);
+    setReport(null);
+    setErrorMessage(null);
+    setAnimationDone(false);
     setStage("scanning");
+
+    analyzeBusinessCompatibility(files)
+      .then((data) => setReport(data))
+      .catch((err) => {
+        const message =
+          err instanceof ApiError
+            ? err.message
+            : "Не удалось рассчитать совместимость. Попробуйте позже.";
+        setTimeout(() => {
+          setErrorMessage(message);
+          setStage("error");
+        }, 1500);
+      });
   }
 
   function handleScanComplete() {
-    setArchetype(getRandomBusinessArchetype());
-    setPercent(Math.floor(60 + Math.random() * 35)); // мок: 60–95%
-    setStage("result");
+    setAnimationDone(true);
+  }
+
+  function handleRetry() {
+    setStage("idle");
+    setImages([]);
+    setReport(null);
+    setErrorMessage(null);
+    setAnimationDone(false);
   }
 
   return (
@@ -61,12 +91,17 @@ export default function BusinessCompatPage() {
         />
       )}
 
-      {stage === "result" && archetype && (
-        <TeaserReportBusiness
-          archetype={archetype}
-          compatibilityPercent={percent}
-          participantCount={participantCount}
-        />
+      {stage === "error" && (
+        <div className="mx-auto max-w-md pb-20 text-center">
+          <p className="text-content-main">{errorMessage}</p>
+          <Button variant="outline" className="mt-4" onClick={handleRetry}>
+            Попробовать снова
+          </Button>
+        </div>
+      )}
+
+      {stage === "result" && report && (
+        <TeaserReportBusiness report={report} />
       )}
     </main>
   );

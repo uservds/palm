@@ -7,7 +7,7 @@ export class GeminiProvider {
   async analyze(params) {
     const { imageBase64, mimeType, prompt } = params;
     const apiKey = config.GEMINI_API_KEY;
-    const model = config.GEMINI_MODEL || 'gemini-flash-latest';
+    const model = config.GEMINI_MODEL || 'gemini-2.5-flash';
 
     if (!apiKey) {
       throw new Error('Gemini API key is not configured');
@@ -100,7 +100,7 @@ export class GeminiProvider {
   async analyzeText(params) {
     const { prompt } = params;
     const apiKey = config.GEMINI_API_KEY;
-    const model = config.GEMINI_MODEL || 'gemini-flash-latest';
+    const model = config.GEMINI_MODEL || 'gemini-2.5-flash';
 
     if (!apiKey) {
       throw new Error('Gemini API key is not configured');
@@ -168,3 +168,4 @@ export class GeminiProvider {
     }
   }
 }
+

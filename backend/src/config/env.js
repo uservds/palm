@@ -1,4 +1,4 @@
-import dotenv from 'dotenv';
+﻿import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -23,7 +23,7 @@ export const config = {
   AI_API_KEY:        process.env.AI_API_KEY || '',
   GEMINI_API_KEY:    process.env.GEMINI_API_KEY || '',
   AI_MODEL:          process.env.AI_MODEL || 'gemini-1.5-flash',
-  GEMINI_MODEL:      process.env.GEMINI_MODEL || 'gemini-flash-latest',
+  GEMINI_MODEL:      process.env.GEMINI_MODEL || 'gemini-2.5-flash',
   AI_FALLBACK_PROVIDER: process.env.AI_FALLBACK_PROVIDER || 'mock',
   AI_TIMEOUT_MS:     num(process.env.AI_TIMEOUT_MS, 20000),
 
@@ -37,5 +37,6 @@ export const config = {
   JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
   BCRYPT_SALT_ROUNDS:     num(process.env.BCRYPT_SALT_ROUNDS, 10),
 };
+
 
 

@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getProvider, getFallbackProvider } from './index.js';
 import { classifyMessage, generateMockReply } from './chatMock.js';
 
 const SYSTEM_PROMPT = `Ты — ИИ-хиромант сервиса PalmAI. Отвечай дружелюбно, по-русски, кратко и по делу.
@@ -14,51 +14,31 @@ const SYSTEM_PROMPT = `Ты — ИИ-хиромант сервиса PalmAI. О�
 
 Если вопрос не связан с хиромантией вообще — вежливо верни разговор к теме ладони.`;
 
-const MODEL_NAME = process.env.GEMINI_CHAT_MODEL || 'gemini-2.0-flash';
-
-let client = null;
-
-function getClient() {
-  if (!process.env.GEMINI_API_KEY) return null;
-  if (!client) {
-    client = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  }
-  return client;
-}
-
 /**
  * history: [{ role: 'user' | 'assistant', text: string }]
+ *
+ * Та же cascade-логика, что у Vision/Compatibility: primary → fallback →
+ * детерминированный mock (chatMock.js) как последний рубеж, если оба
+ * провайдера недоступны (нет ключа, геоблокировка, таймаут, лимиты).
  */
 export async function getChatReply(message, history = []) {
-  const genAI = getClient();
+  const primary = getProvider();
+  const fallback = getFallbackProvider();
 
-  if (!genAI) {
-    return { reply: generateMockReply(message, classifyMessage(message)), source: 'mock' };
-  }
+  const providers = primary.name === fallback.name ? [primary] : [primary, fallback];
 
-  try {
-    const model = genAI.getGenerativeModel({
-      model: MODEL_NAME,
-      systemInstruction: SYSTEM_PROMPT,
-    });
+  for (const provider of providers) {
+    if (typeof provider.chat !== 'function') continue;
 
-    const chat = model.startChat({
-      history: history.map((m) => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.text }],
-      })),
-    });
-
-    const result = await chat.sendMessage(message);
-    const text = result.response.text();
-
-    if (!text || !text.trim()) {
-      throw new Error('Empty response from Gemini');
+    try {
+      const reply = await provider.chat({ message, history, systemPrompt: SYSTEM_PROMPT });
+      if (reply && reply.trim()) {
+        return { reply: reply.trim(), source: provider.name };
+      }
+    } catch (error) {
+      console.error(`chat.service: провайдер "${provider.name}" не ответил —`, error?.message || error);
     }
-
-    return { reply: text.trim(), source: 'gemini' };
-  } catch (error) {
-    console.error('chat.service: Gemini request failed, falling back to mock —', error?.message || error);
-    return { reply: generateMockReply(message, classifyMessage(message)), source: 'mock' };
   }
+
+  return { reply: generateMockReply(message, classifyMessage(message)), source: 'mock' };
 }

@@ -7,6 +7,7 @@ import { authRouter } from './routes/auth.routes.js';
 import { paymentRouter } from './routes/payment.routes.js';
 import { compatibilityRouter } from './routes/compatibility.routes.js';
 import astrologyRoutes from './routes/astrology.routes.js';
+import chatRoutes from './routes/chat.routes.js';
 
 export function buildApp() {
   const app = express();
@@ -26,6 +27,7 @@ export function buildApp() {
   app.use(paymentRouter);
   app.use(compatibilityRouter);
   app.use('/api/astrology', astrologyRoutes);
+  app.use('/api/chat', chatRoutes);
 
   app.use((err, _req, res, _next) => {
     const isMulterError =

@@ -95,4 +95,15 @@ export class MockProvider {
     await new Promise((resolve) => setTimeout(resolve, 200));
     return JSON.parse(JSON.stringify(MOCK_COMPATIBILITY_RESULT));
   }
+
+  /**
+   * Заглушка для чата — используется только если провайдер-цепочка сама
+   * выбрала MockProvider (например, AI_PROVIDER=mock или MOCK_VISION=true).
+   * Тематический фильтр и живые варианты ответов даёт chatMock.js — этот
+   * метод нужен просто для единообразия интерфейса AIProvider.
+   */
+  async chat(_params) {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    return 'Это тестовый mock-ответ чата PalmAI — реальный провайдер (Gemini/OpenRouter) сейчас не используется.';
+  }
 }

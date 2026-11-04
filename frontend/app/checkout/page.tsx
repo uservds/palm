@@ -1,6 +1,5 @@
 import CheckoutForm from "@/components/CheckoutForm";
 import { getPlan } from "@/lib/checkoutPlans";
-export const instant = false
 
 export default async function CheckoutPage({
   searchParams,
